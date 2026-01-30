@@ -1,36 +1,10 @@
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
+import { AuthRedirect } from '@/components/auth-redirect';
 
-export default async function Home() {
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {}
-        },
-      },
-    }
+export default function Home() {
+  return (
+    <Suspense>
+      <AuthRedirect />
+    </Suspense>
   );
-
-  // Check if user is authenticated
-  const { data, error } = await supabase.auth.getUser();
-
-  if (data.user) {
-    // User is authenticated, redirect to dashboard
-    redirect('/dashboard');
-  }
-
-  // User is not authenticated, redirect to login
-  redirect('/auth/login');
 }
