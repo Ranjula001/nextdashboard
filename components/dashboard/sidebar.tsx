@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
-  Door,
+  DoorOpen,
   Calendar,
   Users,
   FileText,
@@ -26,7 +26,7 @@ const menuItems = [
   {
     label: 'Rooms',
     href: '/dashboard/rooms',
-    icon: Door,
+    icon: DoorOpen,
   },
   {
     label: 'Bookings',

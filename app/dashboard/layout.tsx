@@ -14,7 +14,26 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Verify user is authenticated
+  return (
+    <div className="flex min-h-screen bg-slate-50">
+      <Suspense fallback={<div>Loading...</div>}>
+        <AuthCheck />
+      </Suspense>
+      
+      <Sidebar />
+      
+      <main className="flex-1 overflow-auto">
+        <div className="container mx-auto py-8 px-6">
+          <Suspense fallback={<div>Loading...</div>}>
+            {children}
+          </Suspense>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+async function AuthCheck() {
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -41,19 +60,5 @@ export default async function DashboardLayout({
     redirect('/auth/login');
   }
 
-  return (
-    <div className="flex min-h-screen bg-slate-50">
-      {/* Sidebar */}
-      <Suspense>
-        <Sidebar />
-      </Suspense>
-
-      {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        <div className="container mx-auto py-8 px-6">
-          {children}
-        </div>
-      </main>
-    </div>
-  );
+  return null;
 }

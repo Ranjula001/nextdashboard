@@ -1,5 +1,5 @@
 import { PriceCalculation, DurationType } from '@/lib/db/types';
-import { getBookingsForRoomInDateRange } from '@/lib/db/bookings';
+import { getBookingsForRoomInDateRangeClient } from '@/lib/db/bookings';
 
 /**
  * Calculate booking price based on duration, rate, and settings
@@ -60,7 +60,7 @@ export async function isRoomAvailable(
   excludeBookingId?: string
 ): Promise<boolean> {
   try {
-    const conflictingBookings = await getBookingsForRoomInDateRange(
+    const conflictingBookings = await getBookingsForRoomInDateRangeClient(
       roomId,
       checkInDate,
       checkOutDate

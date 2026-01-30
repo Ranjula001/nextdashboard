@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { RoomForm } from './room-form';
-import { createRoom } from '@/lib/db/rooms';
+import { createRoomClient } from '@/lib/db/rooms';
 import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 
@@ -31,7 +31,7 @@ export function CreateRoomDialog({
   const handleSubmit = async (formData: any) => {
     setIsLoading(true);
     try {
-      await createRoom(formData);
+      await createRoomClient(formData);
       setOpen(false);
       router.refresh();
     } catch (error) {
@@ -44,7 +44,7 @@ export function CreateRoomDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild={asChild}>
+      <DialogTrigger asChild>
         {children ? (
           children
         ) : (

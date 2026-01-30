@@ -1,4 +1,4 @@
-import { getRooms } from '@/lib/db/rooms';
+import { getRooms } from '@/lib/db/rooms-server';
 import { getRoomStatusColor } from '@/lib/services/booking.service';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';

@@ -1,4 +1,4 @@
-import { getBookings } from '@/lib/db/bookings';
+import { getBookings } from '@/lib/db/bookings-server';
 import { getSettings } from '@/lib/db/settings';
 import { formatCurrency, getPaymentStatusColor } from '@/lib/services/booking.service';
 import { Button } from '@/components/ui/button';

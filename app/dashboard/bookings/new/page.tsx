@@ -1,6 +1,6 @@
-import { getCustomers } from '@/lib/db/customers';
-import { getRooms } from '@/lib/db/rooms';
-import { createBooking } from '@/lib/db/bookings';
+import { getCustomers } from '@/lib/db/customers-server';
+import { getRooms } from '@/lib/db/rooms-server';
+import { createBooking } from '@/lib/db/bookings-server';
 import { getSettings } from '@/lib/db/settings';
 import { BookingForm } from '@/components/bookings/booking-form';
 import { Button } from '@/components/ui/button';

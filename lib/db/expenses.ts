@@ -33,7 +33,7 @@ export async function getExpenses(): Promise<Expense[]> {
   const { data, error } = await supabase
     .from('expenses')
     .select('*')
-    .order('date', { ascending: false });
+    .order('expense_date', { ascending: false });
 
   if (error) {
     console.error('Error fetching expenses:', error);
@@ -75,9 +75,9 @@ export async function getExpensesForDateRange(
   const { data, error } = await supabase
     .from('expenses')
     .select('*')
-    .gte('date', startDate)
-    .lt('date', endDate)
-    .order('date', { ascending: false });
+    .gte('expense_date', startDate)
+    .lt('expense_date', endDate)
+    .order('expense_date', { ascending: false });
 
   if (error) {
     console.error('Error fetching expenses for date range:', error);
@@ -97,7 +97,7 @@ export async function getExpensesByCategory(category: ExpenseCategory): Promise<
     .from('expenses')
     .select('*')
     .eq('category', category)
-    .order('date', { ascending: false });
+    .order('expense_date', { ascending: false });
 
   if (error) {
     console.error('Error fetching expenses by category:', error);
@@ -191,8 +191,8 @@ export async function getTotalExpensesForDateRange(
   const { data, error } = await supabase
     .from('expenses')
     .select('amount')
-    .gte('date', startDate)
-    .lt('date', endDate);
+    .gte('expense_date', startDate)
+    .lt('expense_date', endDate);
 
   if (error) {
     console.error('Error calculating total expenses:', error);

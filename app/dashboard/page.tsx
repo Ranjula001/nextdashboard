@@ -3,13 +3,13 @@ import { cookies } from 'next/headers';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { QuickActions } from '@/components/dashboard/quick-actions';
 import { formatCurrency } from '@/lib/services/booking.service';
-import { getRooms } from '@/lib/db/rooms';
+import { getRooms } from '@/lib/db/rooms-server';
 import {
   getTodaysBookings,
   getUpcomingCheckIns,
   getUpcomingCheckOuts,
   getRevenueForDateRange,
-} from '@/lib/db/bookings';
+} from '@/lib/db/bookings-server';
 import { getTotalExpensesForDateRange } from '@/lib/db/expenses';
 import { getSettings } from '@/lib/db/settings';
 import {
