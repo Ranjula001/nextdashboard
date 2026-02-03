@@ -15,9 +15,8 @@ export default async function BookingDetailPage({
   params,
 }: BookingDetailPageProps) {
   const { id } = await params;
-  const [booking, payments, settings] = await Promise.all([
+  const [booking, settings] = await Promise.all([
     getBookingById(id),
-    getPaymentsForBooking(id),
     getSettings(),
   ]);
 
@@ -37,33 +36,15 @@ export default async function BookingDetailPage({
     redirect('/dashboard/bookings');
   };
 
-  const handleRecordPayment = async (formData: FormData) => {
-    'use server';
-    const amount = parseFloat(formData.get('amount') as string);
-    const method = formData.get('method') as any;
-    const notes = formData.get('notes') as string;
-
-    if (amount > 0) {
-      await createPayment({
-        booking_id: id,
-        amount,
-        payment_method: method,
-        notes: notes || undefined,
-      });
-
-      redirect(`/dashboard/bookings/${id}`);
-    }
-  };
-
-  const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-  const remainingBalance = booking.subtotal - totalPaid;
+  const totalPaid = 0; // No payments table, so always 0
+  const remainingBalance = booking.total_amount;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link href="/dashboard/bookings">
-          <Button variant="ghost" size="sm">
+          <Button variant="outline" size="sm">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
@@ -133,9 +114,9 @@ export default async function BookingDetailPage({
                 </div>
               </div>
               <div>
-                <p className="text-sm text-slate-600 mb-2">Duration</p>
+                <p className="text-sm text-slate-600 mb-2">Booking Type</p>
                 <p className="font-medium text-slate-900">
-                  {booking.duration_value} {booking.duration_type.toLowerCase()}
+                  {booking.booking_type}
                 </p>
               </div>
             </div>
@@ -146,89 +127,7 @@ export default async function BookingDetailPage({
             <h2 className="text-lg font-semibold text-slate-900 mb-4">
               Payment History
             </h2>
-            {payments.length > 0 ? (
-              <div className="space-y-3">
-                {payments.map((payment) => (
-                  <div
-                    key={payment.id}
-                    className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
-                  >
-                    <div>
-                      <p className="font-medium text-slate-900">
-                        {formatCurrency(payment.amount, settings.currency)}
-                      </p>
-                      <p className="text-xs text-slate-600">
-                        {new Date(payment.payment_date).toLocaleString(
-                          'en-US'
-                        )}{' '}
-                        • {payment.payment_method}
-                      </p>
-                    </div>
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-slate-600">No payments recorded yet</p>
-            )}
-
-            {/* Record Payment Form */}
-            {remainingBalance > 0 && (
-              <form action={handleRecordPayment} className="mt-4 pt-4 border-t">
-                <h3 className="text-sm font-semibold text-slate-900 mb-3">
-                  Record Payment
-                </h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-sm font-medium text-slate-600">
-                      Amount ({settings.currency})
-                    </label>
-                    <input
-                      type="number"
-                      name="amount"
-                      placeholder="0"
-                      min="0"
-                      step="100"
-                      max={remainingBalance}
-                      className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-600">
-                      Payment Method
-                    </label>
-                    <select
-                      name="method"
-                      defaultValue="CASH"
-                      className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="CASH">Cash</option>
-                      <option value="BANK">Bank Transfer</option>
-                      <option value="DIGITAL">Digital Payment</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-600">
-                      Notes
-                    </label>
-                    <input
-                      type="text"
-                      name="notes"
-                      placeholder="Optional notes"
-                      className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full bg-green-600 hover:bg-green-700"
-                  >
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Record Payment
-                  </Button>
-                </div>
-              </form>
-            )}
+            <p className="text-slate-600">Payment tracking not available - payments table not configured</p>
           </div>
         </div>
 
@@ -241,21 +140,21 @@ export default async function BookingDetailPage({
             </h2>
             <div className="space-y-2 text-sm mb-4">
               <div className="flex justify-between">
-                <span className="text-slate-600">Room Rate</span>
-                <span className="text-slate-900">
-                  {formatCurrency(booking.room_rate, settings.currency)}
-                </span>
-              </div>
-              <div className="flex justify-between">
                 <span className="text-slate-600">Subtotal</span>
                 <span className="text-slate-900">
                   {formatCurrency(booking.subtotal, settings.currency)}
                 </span>
               </div>
+              <div className="flex justify-between">
+                <span className="text-slate-600">Discount</span>
+                <span className="text-slate-900">
+                  {formatCurrency(booking.discount, settings.currency)}
+                </span>
+              </div>
               <div className="border-t pt-2 mt-2 flex justify-between font-semibold">
                 <span>Total</span>
                 <span>
-                  {formatCurrency(booking.subtotal, settings.currency)}
+                  {formatCurrency(booking.total_amount, settings.currency)}
                 </span>
               </div>
             </div>
@@ -275,15 +174,15 @@ export default async function BookingDetailPage({
             {/* Amount Breakdown */}
             <div className="space-y-2 text-sm bg-slate-50 p-3 rounded-lg">
               <div className="flex justify-between">
-                <span className="text-slate-600">Paid</span>
+                <span className="text-slate-600">Total Amount</span>
                 <span className="font-medium">
-                  {formatCurrency(totalPaid, settings.currency)}
+                  {formatCurrency(booking.total_amount, settings.currency)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-600">Remaining</span>
-                <span className="font-medium text-red-600">
-                  {formatCurrency(remainingBalance, settings.currency)}
+                <span className="text-slate-600">Payment Status</span>
+                <span className={`font-medium ${booking.payment_status === 'PAID' ? 'text-green-600' : 'text-red-600'}`}>
+                  {booking.payment_status}
                 </span>
               </div>
             </div>
@@ -297,13 +196,14 @@ export default async function BookingDetailPage({
             <div className="space-y-2">
               {booking.status === 'ACTIVE' && (
                 <>
+                  {/* Complete Booking Button */}
                   <form action={handleCompleteBooking}>
                     <Button
                       type="submit"
                       className="w-full bg-green-600 hover:bg-green-700"
                     >
                       <CheckCircle className="w-4 h-4 mr-2" />
-                      Complete Booking
+                      Check Out
                     </Button>
                   </form>
                   <form action={handleCancelBooking}>

@@ -2,7 +2,13 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { Sidebar } from '@/components/dashboard/sidebar';
+import { getSettings } from '@/lib/db/settings';
 import { Suspense } from 'react';
+
+async function SidebarWrapper() {
+  const settings = await getSettings();
+  return <Sidebar businessName={settings.business_name} />;
+}
 
 export const metadata = {
   title: 'BIMBARA Dashboard | Holiday Home ERP',
@@ -20,10 +26,12 @@ export default async function DashboardLayout({
         <AuthCheck />
       </Suspense>
       
-      <Sidebar />
+      <Suspense fallback={<div className="hidden lg:block w-64 bg-white border-r border-slate-200">Loading...</div>}>
+        <SidebarWrapper />
+      </Suspense>
       
-      <main className="flex-1 overflow-auto">
-        <div className="container mx-auto py-8 px-6">
+      <main className="flex-1 overflow-auto lg:ml-0">
+        <div className="container mx-auto py-4 sm:py-8 px-3 sm:px-6">
           <Suspense fallback={<div>Loading...</div>}>
             {children}
           </Suspense>

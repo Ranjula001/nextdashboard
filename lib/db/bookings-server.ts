@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Booking, CreateBookingInput, UpdateBookingInput, BookingWithRelations } from './types';
+import { incrementCustomerVisitCount } from './customers-server';
 
 export async function getBookingsClient() {
   const cookieStore = await cookies();
@@ -24,7 +25,25 @@ export async function getBookingsClient() {
   );
 }
 
+export async function updateExpiredBookings(): Promise<void> {
+  const supabase = await getBookingsClient();
+  const now = new Date().toISOString();
+
+  const { error } = await supabase
+    .from('bookings')
+    .update({ status: 'EXPIRED' })
+    .eq('status', 'ACTIVE')
+    .lt('check_out_date', now);
+
+  if (error) {
+    console.error('Error updating expired bookings:', error);
+  }
+}
+
 export async function getBookings(): Promise<BookingWithRelations[]> {
+  // Update expired bookings first
+  await updateExpiredBookings();
+  
   const supabase = await getBookingsClient();
 
   const { data, error } = await supabase
@@ -47,6 +66,9 @@ export async function getBookings(): Promise<BookingWithRelations[]> {
 }
 
 export async function getTodaysBookings(): Promise<BookingWithRelations[]> {
+  // Update expired bookings first
+  await updateExpiredBookings();
+  
   const supabase = await getBookingsClient();
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -102,6 +124,35 @@ export async function getUpcomingCheckIns(hoursAhead: number = 4): Promise<Booki
   return data || [];
 }
 
+export async function getUpcomingBookings(): Promise<BookingWithRelations[]> {
+  // Update expired bookings first
+  await updateExpiredBookings();
+  
+  const supabase = await getBookingsClient();
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+
+  const { data, error } = await supabase
+    .from('bookings')
+    .select(
+      `
+      *,
+      room:rooms(*),
+      customer:customers(*)
+    `
+    )
+    .gte('check_in_date', tomorrow.toISOString())
+    .order('check_in_date', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching upcoming bookings:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
 export async function getUpcomingCheckOuts(hoursAhead: number = 4): Promise<BookingWithRelations[]> {
   const supabase = await getBookingsClient();
   const now = new Date();
@@ -138,7 +189,7 @@ export async function getRevenueForDateRange(
   const { data, error } = await supabase
     .from('bookings')
     .select('subtotal')
-    .in('status', ['ACTIVE', 'CHECKED_OUT'])
+    .in('status', ['ACTIVE', 'EXPIRED'])
     .gte('check_in_date', startDate)
     .lt('check_in_date', endDate);
 
@@ -162,13 +213,65 @@ export async function getBookingsForRoomInDateRange(
     .select('*')
     .eq('room_id', roomId)
     .eq('status', 'ACTIVE')
-    .lt('check_in_date', endDate)
-    .gt('check_out_date', startDate)
+    .or(`check_in_date.lt.${endDate},check_out_date.gt.${startDate}`)
     .order('check_in_date', { ascending: true });
 
   if (error) {
     console.error('Error fetching bookings for room:', error);
     throw new Error('Failed to fetch room bookings');
+  }
+
+  return data || [];
+}
+
+export async function isRoomAvailable(
+  roomId: string,
+  checkInDate: string,
+  checkOutDate: string,
+  excludeBookingId?: string
+): Promise<boolean> {
+  const supabase = await getBookingsClient();
+
+  let query = supabase
+    .from('bookings')
+    .select('id')
+    .eq('room_id', roomId)
+    .eq('status', 'ACTIVE')
+    .or(`and(check_in_date.lt.${checkOutDate},check_out_date.gt.${checkInDate})`);
+
+  if (excludeBookingId) {
+    query = query.neq('id', excludeBookingId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Error checking room availability:', error);
+    return false;
+  }
+
+  return (data || []).length === 0;
+}
+
+export async function getCustomerActiveBookings(customerId: string): Promise<BookingWithRelations[]> {
+  const supabase = await getBookingsClient();
+
+  const { data, error } = await supabase
+    .from('bookings')
+    .select(
+      `
+      *,
+      room:rooms(*),
+      customer:customers(*)
+    `
+    )
+    .eq('customer_id', customerId)
+    .eq('status', 'ACTIVE')
+    .order('check_in_date', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching customer bookings:', error);
+    throw new Error('Failed to fetch customer bookings');
   }
 
   return data || [];
@@ -182,12 +285,34 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
     throw new Error('User not authenticated');
   }
 
+  // Map duration_type to booking_type for database compatibility
+  const bookingType = input.duration_type === 'HOURS' ? 'HOURLY' : 'DAILY';
+  
+  // Calculate payment status based on advance paid vs total
+  let paymentStatus: 'PENDING' | 'PARTIAL' | 'PAID' = 'PENDING';
+  if (input.advance_paid >= input.subtotal) {
+    paymentStatus = 'PAID';
+  } else if (input.advance_paid > 0) {
+    paymentStatus = 'PARTIAL';
+  }
+
   const { data, error } = await supabase
     .from('bookings')
     .insert({
       owner_id: userData.user.id,
-      ...input,
+      room_id: input.room_id,
+      customer_id: input.customer_id,
+      check_in_date: input.check_in_date,
+      check_out_date: input.check_out_date,
+      booking_type: bookingType,
       status: 'ACTIVE',
+      subtotal: input.subtotal,
+      discount: 0,
+      total_amount: input.subtotal,
+      advance_paid: input.advance_paid,
+      payment_status: paymentStatus,
+      payment_method: input.payment_method,
+      notes: input.notes,
     })
     .select()
     .single();
@@ -195,6 +320,14 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
   if (error) {
     console.error('Error creating booking:', error);
     throw new Error('Failed to create booking');
+  }
+
+  // Increment customer visit count
+  try {
+    await incrementCustomerVisitCount(input.customer_id);
+  } catch (error) {
+    console.error('Error incrementing visit count:', error);
+    // Don't fail the booking creation if visit count update fails
   }
 
   return data;

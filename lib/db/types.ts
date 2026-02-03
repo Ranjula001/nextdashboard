@@ -5,9 +5,9 @@
 // ============================================================================
 
 export type RoomType = 'AC' | 'NON_AC';
-export type RoomStatus = 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE' | 'BLOCKED';
+export type RoomStatus = 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE' | 'OUT_OF_ORDER';
 export type DurationType = 'HOURS' | 'DAYS';
-export type BookingStatus = 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+export type BookingStatus = 'ACTIVE' | 'EXPIRED' | 'CANCELLED';
 export type PaymentStatus = 'PENDING' | 'PARTIAL' | 'PAID';
 export type PaymentMethod = 'CASH' | 'BANK' | 'DIGITAL';
 export type BookingSource = 'WALKIN' | 'PHONE' | 'ONLINE';
@@ -57,17 +57,15 @@ export interface Booking {
   customer_id: string;
   check_in_date: string;
   check_out_date: string;
-  duration_type: DurationType;
-  duration_value: number;
-  room_rate: number;
+  booking_type: string;
+  status: BookingStatus;
   subtotal: number;
+  discount: number;
+  total_amount: number;
   advance_paid: number;
-  balance: number;
   payment_status: PaymentStatus;
   payment_method: PaymentMethod | null;
-  booking_source: BookingSource;
   notes: string | null;
-  status: BookingStatus;
   created_at: string;
   updated_at: string;
 }
@@ -87,9 +85,11 @@ export interface Expense {
   id: string;
   owner_id: string;
   category: ExpenseCategory;
-  amount: number;
-  date: string;
   description: string | null;
+  amount: number;
+  expense_date: string;
+  receipt_url: string | null;
+  notes: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -143,12 +143,9 @@ export interface CreateBookingInput {
   check_in_date: string;
   check_out_date: string;
   duration_type: DurationType;
-  duration_value: number;
-  room_rate: number;
   subtotal: number;
   advance_paid: number;
   payment_method?: PaymentMethod;
-  booking_source: BookingSource;
   notes?: string;
 }
 
@@ -165,9 +162,11 @@ export interface CreatePaymentInput {
 
 export interface CreateExpenseInput {
   category: ExpenseCategory;
-  amount: number;
-  date: string;
   description?: string;
+  amount: number;
+  expense_date: string;
+  receipt_url?: string;
+  notes?: string;
 }
 
 export interface UpdateExpenseInput extends Partial<CreateExpenseInput> {}

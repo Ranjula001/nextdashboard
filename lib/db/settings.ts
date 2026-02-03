@@ -67,9 +67,12 @@ async function createDefaultSettings(ownerId: string): Promise<Settings> {
       business_name: 'BIMBARA Holiday Home',
       currency: 'LKR',
       timezone: 'Asia/Colombo',
-      check_in_time: '14:00:00',
-      check_out_time: '12:00:00',
-      tax_rate: 0,
+      default_ac_hourly_rate: 1500,
+      default_ac_daily_rate: 5000,
+      default_nonac_hourly_rate: 1000,
+      default_nonac_daily_rate: 3500,
+      tax_percentage: null,
+      service_charge_percentage: null,
     })
     .select()
     .single();

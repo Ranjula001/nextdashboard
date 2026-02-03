@@ -9,12 +9,33 @@ export async function createBookingClient(input: CreateBookingInput): Promise<Bo
     throw new Error('User not authenticated');
   }
 
+  // Map duration_type to booking_type for database compatibility
+  const bookingType = input.duration_type === 'HOURS' ? 'HOURLY' : 'DAILY';
+  
+  // Calculate payment status based on advance paid vs total
+  let paymentStatus: 'PENDING' | 'PARTIAL' | 'PAID' = 'PENDING';
+  if (input.advance_paid >= input.subtotal) {
+    paymentStatus = 'PAID';
+  } else if (input.advance_paid > 0) {
+    paymentStatus = 'PARTIAL';
+  }
+
   const { data, error } = await supabase
     .from('bookings')
     .insert({
       owner_id: userData.user.id,
-      ...input,
+      room_id: input.room_id,
+      customer_id: input.customer_id,
+      check_in_date: input.check_in_date,
+      check_out_date: input.check_out_date,
+      booking_type: bookingType,
       status: 'ACTIVE',
+      subtotal: input.subtotal,
+      discount: 0,
+      total_amount: input.subtotal,
+      payment_status: paymentStatus,
+      payment_method: input.payment_method,
+      notes: input.notes,
     })
     .select()
     .single();
@@ -73,4 +94,53 @@ export async function getBookingsForRoomInDateRangeClient(
   }
 
   return data || [];
+}
+
+export async function getBookingById(bookingId: string): Promise<Booking | null> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('bookings')
+    .select(`
+      *,
+      room:rooms(*),
+      customer:customers(*)
+    `)
+    .eq('id', bookingId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    console.error('Error fetching booking:', error);
+    throw new Error('Failed to fetch booking');
+  }
+
+  return data || null;
+}
+
+export async function completeBooking(bookingId: string): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from('bookings')
+    .update({ status: 'CHECKED_OUT' })
+    .eq('id', bookingId);
+
+  if (error) {
+    console.error('Error completing booking:', error);
+    throw new Error('Failed to complete booking');
+  }
+}
+
+export async function cancelBooking(bookingId: string): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from('bookings')
+    .update({ status: 'CANCELLED' })
+    .eq('id', bookingId);
+
+  if (error) {
+    console.error('Error cancelling booking:', error);
+    throw new Error('Failed to cancel booking');
+  }
 }

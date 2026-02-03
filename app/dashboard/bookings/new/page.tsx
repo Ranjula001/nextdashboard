@@ -31,7 +31,7 @@ export default async function CreateBookingPage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link href="/dashboard/bookings">
-          <Button variant="ghost" size="sm">
+          <Button variant="outline" size="sm">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>

@@ -1,5 +1,6 @@
 import { PriceCalculation, DurationType } from '@/lib/db/types';
 import { getBookingsForRoomInDateRangeClient } from '@/lib/db/bookings';
+import { createClient } from '@/lib/supabase/client';
 
 /**
  * Calculate booking price based on duration, rate, and settings
@@ -50,32 +51,35 @@ export function calculateDuration(
   }
 }
 
-/**
- * Check if a room is available for the given date range
- */
 export async function isRoomAvailable(
   roomId: string,
   checkInDate: string,
-  checkOutDate: string,
-  excludeBookingId?: string
-): Promise<boolean> {
-  try {
-    const conflictingBookings = await getBookingsForRoomInDateRangeClient(
-      roomId,
-      checkInDate,
-      checkOutDate
-    );
+  checkOutDate: string
+): Promise<{ available: boolean; conflictingBooking?: any }> {
+  const supabase = createClient();
 
-    // Filter out the current booking if it's being edited
-    const relevantBookings = excludeBookingId
-      ? conflictingBookings.filter((b) => b.id !== excludeBookingId)
-      : conflictingBookings;
+  const { data, error } = await supabase
+    .from('bookings')
+    .select(`
+      id,
+      check_in_date,
+      check_out_date,
+      customer:customers(name)
+    `)
+    .eq('room_id', roomId)
+    .eq('status', 'ACTIVE')
+    .or(`and(check_in_date.lt.${checkOutDate},check_out_date.gt.${checkInDate})`);
 
-    return relevantBookings.length === 0;
-  } catch (error) {
+  if (error) {
     console.error('Error checking room availability:', error);
-    return false;
+    return { available: false };
   }
+
+  const conflicts = data || [];
+  return {
+    available: conflicts.length === 0,
+    conflictingBooking: conflicts[0] || null
+  };
 }
 
 /**
@@ -175,9 +179,9 @@ export function getRoomStatusColor(status: string): string {
     case 'OCCUPIED':
       return 'bg-blue-100 text-blue-800';
     case 'MAINTENANCE':
-      return 'bg-red-100 text-red-800';
-    case 'BLOCKED':
       return 'bg-yellow-100 text-yellow-800';
+    case 'OUT_OF_ORDER':
+      return 'bg-red-100 text-red-800';
     default:
       return 'bg-gray-100 text-gray-800';
   }

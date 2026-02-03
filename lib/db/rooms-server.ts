@@ -90,6 +90,8 @@ export async function updateRoom(
 ): Promise<Room> {
   const supabase = await getRoomsClient();
 
+  console.log('Updating room:', roomId, 'with data:', input);
+
   const { data, error } = await supabase
     .from('rooms')
     .update({
@@ -102,7 +104,7 @@ export async function updateRoom(
 
   if (error) {
     console.error('Error updating room:', error);
-    throw new Error('Failed to update room');
+    throw new Error(`Failed to update room: ${error.message}`);
   }
 
   return data;
@@ -116,32 +118,16 @@ export async function reactivateRoom(roomId: string): Promise<void> {
   await updateRoom(roomId, { is_active: true });
 }
 
-export async function getAvailableRoomsForDateRange(
-  checkInDate: string,
-  checkOutDate: string
-): Promise<Room[]> {
+export async function deleteRoom(roomId: string): Promise<void> {
   const supabase = await getRoomsClient();
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('rooms')
-    .select(
-      `
-      *,
-      bookings!inner(id)
-    `
-    )
-    .eq('is_active', true)
-    .not('bookings.id', 'is', null)
-    .gte('bookings.check_out_date', checkInDate)
-    .lte('bookings.check_in_date', checkOutDate)
-    .eq('bookings.status', 'ACTIVE');
+    .delete()
+    .eq('id', roomId);
 
   if (error) {
-    console.error('Error fetching available rooms:', error);
-    return getRooms();
+    console.error('Error deleting room:', error);
+    throw new Error('Failed to delete room');
   }
-
-  const allRooms = await getRooms();
-  const bookedRoomIds = data?.map((r: any) => r.id) || [];
-  return allRooms.filter((room) => !bookedRoomIds.includes(room.id));
 }

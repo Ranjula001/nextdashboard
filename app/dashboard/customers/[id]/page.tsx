@@ -1,5 +1,5 @@
-import { getCustomerById, updateCustomer, deleteCustomer } from '@/lib/db/customers';
-import { getCustomerActiveBookings } from '@/lib/db/bookings';
+import { getCustomerById, updateCustomer, deleteCustomer } from '@/lib/db/customers-server';
+import { getCustomerActiveBookings } from '@/lib/db/bookings-server';
 import { getSettings } from '@/lib/db/settings';
 import { formatCurrency, getPaymentStatusColor } from '@/lib/services/booking.service';
 import { CustomerForm } from '@/components/customers/customer-form';
@@ -44,7 +44,7 @@ export default async function CustomerProfilePage({
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link href="/dashboard/customers">
-          <Button variant="ghost" size="sm">
+          <Button variant="outline" size="sm">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>

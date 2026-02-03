@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useState } from 'react';
 import {
   LayoutDashboard,
   DoorOpen,
@@ -13,6 +14,8 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  Menu,
+  X,
 } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
@@ -60,9 +63,10 @@ const menuItems = [
   },
 ];
 
-export function Sidebar() {
+export function Sidebar({ businessName }: { businessName: string }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     const supabase = createBrowserClient(
@@ -75,49 +79,74 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="w-64 bg-slate-900 text-white flex flex-col min-h-screen">
-      {/* Logo/Brand */}
-      <div className="p-6 border-b border-slate-700">
-        <h1 className="text-xl font-bold">BIMBARA</h1>
-        <p className="text-xs text-slate-400">Holiday Home ERP</p>
-      </div>
+    <>
+      {/* Mobile Menu Button */}
+      <button
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-slate-900 text-white rounded-lg shadow-lg"
+      >
+        {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+      </button>
 
-      {/* Navigation Menu */}
-      <nav className="flex-1 p-4 space-y-2">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const isActive =
-            pathname === item.href ||
-            (item.href !== '/dashboard' && pathname.startsWith(item.href));
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
-                isActive
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              )}
-            >
-              <Icon className="w-5 h-5" />
-              <span className="font-medium">{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
+      {/* Sidebar */}
+      <aside className={cn(
+        "bg-slate-900 text-white flex flex-col min-h-screen transition-transform duration-300 z-40",
+        "lg:w-64 lg:relative lg:translate-x-0",
+        "fixed w-64 top-0 left-0",
+        isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      )}>
+        {/* Logo/Brand */}
+        <div className="p-4 lg:p-6 border-b border-slate-700 mt-12 lg:mt-0">
+          <h1 className="text-lg lg:text-xl font-bold">{businessName}</h1>
+          <p className="text-xs text-slate-400">Holiday Home ERP</p>
+        </div>
 
-      {/* Footer - Logout Button */}
-      <div className="p-4 border-t border-slate-700">
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
-        >
-          <LogOut className="w-5 h-5" />
-          <span className="font-medium">Logout</span>
-        </button>
-      </div>
-    </aside>
+        {/* Navigation Menu */}
+        <nav className="flex-1 p-3 lg:p-4 space-y-1 lg:space-y-2">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive =
+              pathname === item.href ||
+              (item.href !== '/dashboard' && pathname.startsWith(item.href));
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={cn(
+                  'flex items-center gap-3 px-3 lg:px-4 py-2 lg:py-3 rounded-lg transition-colors text-sm lg:text-base',
+                  isActive
+                    ? 'bg-blue-600 text-white'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                )}
+              >
+                <Icon className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+                <span className="font-medium">{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Footer - Logout Button */}
+        <div className="p-3 lg:p-4 border-t border-slate-700">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 lg:px-4 py-2 lg:py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors text-sm lg:text-base"
+          >
+            <LogOut className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+            <span className="font-medium">Logout</span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }

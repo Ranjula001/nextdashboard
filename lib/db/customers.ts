@@ -50,3 +50,17 @@ export async function updateCustomerClient(
 
   return data;
 }
+
+export async function deleteCustomer(customerId: string): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from('customers')
+    .delete()
+    .eq('id', customerId);
+
+  if (error) {
+    console.error('Error deleting customer:', error);
+    throw new Error('Failed to delete customer');
+  }
+}
