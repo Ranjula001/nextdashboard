@@ -64,7 +64,7 @@ export function CustomerForm({
 
       {/* Name */}
       <div>
-        <Label htmlFor="name" className="text-sm font-medium">
+        <Label htmlFor="name" className="text-sm font-medium text-slate-900">
           Full Name
         </Label>
         <Input
@@ -79,7 +79,7 @@ export function CustomerForm({
 
       {/* Phone Number */}
       <div>
-        <Label htmlFor="phone" className="text-sm font-medium">
+        <Label htmlFor="phone" className="text-sm font-medium text-slate-900">
           Phone Number
         </Label>
         <Input
@@ -96,7 +96,7 @@ export function CustomerForm({
 
       {/* Email */}
       <div>
-        <Label htmlFor="email" className="text-sm font-medium">
+        <Label htmlFor="email" className="text-sm font-medium text-slate-900">
           Email (Optional)
         </Label>
         <Input
@@ -111,7 +111,7 @@ export function CustomerForm({
 
       {/* Notes */}
       <div>
-        <Label htmlFor="notes" className="text-sm font-medium">
+        <Label htmlFor="notes" className="text-sm font-medium text-slate-900">
           Notes (Optional)
         </Label>
         <textarea
@@ -120,7 +120,7 @@ export function CustomerForm({
           value={formData.notes || ''}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
           disabled={isLoading}
-          className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900"
           rows={3}
         />
       </div>

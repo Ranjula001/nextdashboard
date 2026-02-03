@@ -1,6 +1,6 @@
-import { getCustomers } from '@/lib/db/customers';
-import { getRooms } from '@/lib/db/rooms';
-import { createBooking } from '@/lib/db/bookings';
+import { getCustomers } from '@/lib/db/customers-server';
+import { getRooms } from '@/lib/db/rooms-server';
+import { createBooking } from '@/lib/db/bookings-server';
 import { getSettings } from '@/lib/db/settings';
 import { BookingForm } from '@/components/bookings/booking-form';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,7 @@ export default async function CreateBookingPage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link href="/dashboard/bookings">
-          <Button variant="ghost" size="sm">
+          <Button variant="outline" size="sm">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>

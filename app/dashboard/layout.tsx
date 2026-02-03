@@ -2,11 +2,17 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { Sidebar } from '@/components/dashboard/sidebar';
+import { getSettings } from '@/lib/db/settings';
 import { Suspense } from 'react';
 
+async function SidebarWrapper() {
+  const settings = await getSettings();
+  return <Sidebar businessName={settings.business_name} />;
+}
+
 export const metadata = {
-  title: 'BIMBARA Dashboard | Holiday Home ERP',
-  description: 'Manage your holiday home bookings and operations',
+  title: '9TAILED ERP SYSTEMS',
+  description: 'Manage your stay bookings and operations',
 };
 
 export default async function DashboardLayout({
@@ -14,7 +20,28 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Verify user is authenticated
+  return (
+    <div className="flex min-h-screen bg-slate-50">
+      <Suspense fallback={<div>Loading...</div>}>
+        <AuthCheck />
+      </Suspense>
+      
+      <Suspense fallback={<div className="hidden lg:block w-64 bg-white border-r border-slate-200">Loading...</div>}>
+        <SidebarWrapper />
+      </Suspense>
+      
+      <main className="flex-1 overflow-auto lg:ml-0">
+        <div className="container mx-auto py-4 sm:py-8 px-3 sm:px-6">
+          <Suspense fallback={<div>Loading...</div>}>
+            {children}
+          </Suspense>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+async function AuthCheck() {
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -41,19 +68,5 @@ export default async function DashboardLayout({
     redirect('/auth/login');
   }
 
-  return (
-    <div className="flex min-h-screen bg-slate-50">
-      {/* Sidebar */}
-      <Suspense>
-        <Sidebar />
-      </Suspense>
-
-      {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        <div className="container mx-auto py-8 px-6">
-          {children}
-        </div>
-      </main>
-    </div>
-  );
+  return null;
 }

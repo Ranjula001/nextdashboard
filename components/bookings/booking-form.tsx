@@ -16,6 +16,7 @@ import {
   calculateDuration,
   calculateBookingPrice,
   formatCurrency,
+  isRoomAvailable,
 } from '@/lib/services/booking.service';
 
 interface BookingFormProps {
@@ -42,7 +43,6 @@ export function BookingForm({
     check_out_time: '00:00',
     duration_type: 'DAYS' as DurationType,
     payment_method: 'CASH' as const,
-    booking_source: 'WALKIN' as const,
     notes: '',
   });
 
@@ -69,6 +69,35 @@ export function BookingForm({
 
       const room = rooms.find((r) => r.id === formData.room_id);
       if (!room) return;
+
+      // Check room availability
+      const checkAvailability = async () => {
+        try {
+          const result = await isRoomAvailable(
+            formData.room_id,
+            checkIn.toISOString(),
+            checkOut.toISOString()
+          );
+          
+          if (!result.available) {
+            const conflict = result.conflictingBooking;
+            if (conflict) {
+              const conflictStart = new Date(conflict.check_in_date).toLocaleDateString();
+              const conflictEnd = new Date(conflict.check_out_date).toLocaleDateString();
+              const customerName = conflict.customer?.name || 'Another customer';
+              setError(`Room is already booked by ${customerName} from ${conflictStart} to ${conflictEnd}`);
+            } else {
+              setError('Room is not available for the selected dates');
+            }
+            setPriceBreakdown(null);
+            return;
+          }
+        } catch (err) {
+          console.error('Error checking availability:', err);
+        }
+      };
+      
+      checkAvailability();
 
       const duration = calculateDuration(checkIn, checkOut, formData.duration_type);
       const roomRate =
@@ -143,12 +172,9 @@ export function BookingForm({
           `${formData.check_out_date}T${formData.check_out_time}`
         ).toISOString(),
         duration_type: formData.duration_type,
-        duration_value: priceBreakdown.duration,
-        room_rate: priceBreakdown.roomRate,
         subtotal: priceBreakdown.total_price,
         advance_paid: advancePaid,
         payment_method: formData.payment_method,
-        booking_source: formData.booking_source,
         notes: formData.notes,
       };
 
@@ -168,7 +194,7 @@ export function BookingForm({
 
       {/* Customer Selection */}
       <div>
-        <Label htmlFor="customer_id" className="text-sm font-medium">
+        <Label htmlFor="customer_id" className="text-sm font-medium text-slate-900">
           Customer
         </Label>
         <Select
@@ -192,7 +218,7 @@ export function BookingForm({
 
       {/* Room Selection */}
       <div>
-        <Label htmlFor="room_id" className="text-sm font-medium">
+        <Label htmlFor="room_id" className="text-sm font-medium text-slate-900">
           Room
         </Label>
         <Select
@@ -207,11 +233,19 @@ export function BookingForm({
           <SelectContent>
             {rooms
               .filter((r) => r.status === 'AVAILABLE' && r.is_active)
-              .map((room) => (
-                <SelectItem key={room.id} value={room.id}>
-                  {room.room_name} ({room.room_type === 'AC' ? 'AC' : 'Non-AC'})
-                </SelectItem>
-              ))}
+              .map((room) => {
+                // Check if room is available for selected dates
+                const isAvailable = !formData.check_in_date || !formData.check_out_date || 
+                  // Add availability check logic here when dates are selected
+                  true;
+                
+                return (
+                  <SelectItem key={room.id} value={room.id} disabled={!isAvailable}>
+                    {room.room_name} ({room.room_type === 'AC' ? 'AC' : 'Non-AC'})
+                    {!isAvailable && ' - Not Available'}
+                  </SelectItem>
+                );
+              })}
           </SelectContent>
         </Select>
       </div>
@@ -219,7 +253,7 @@ export function BookingForm({
       {/* Check-in Date & Time */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="check_in_date" className="text-sm font-medium">
+          <Label htmlFor="check_in_date" className="text-sm font-medium text-slate-900">
             Check-in Date
           </Label>
           <Input
@@ -233,7 +267,7 @@ export function BookingForm({
           />
         </div>
         <div>
-          <Label htmlFor="check_in_time" className="text-sm font-medium">
+          <Label htmlFor="check_in_time" className="text-sm font-medium text-slate-900">
             Check-in Time
           </Label>
           <Input
@@ -251,7 +285,7 @@ export function BookingForm({
       {/* Check-out Date & Time */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="check_out_date" className="text-sm font-medium">
+          <Label htmlFor="check_out_date" className="text-sm font-medium text-slate-900">
             Check-out Date
           </Label>
           <Input
@@ -265,7 +299,7 @@ export function BookingForm({
           />
         </div>
         <div>
-          <Label htmlFor="check_out_time" className="text-sm font-medium">
+          <Label htmlFor="check_out_time" className="text-sm font-medium text-slate-900">
             Check-out Time
           </Label>
           <Input
@@ -282,7 +316,7 @@ export function BookingForm({
 
       {/* Duration Type */}
       <div>
-        <Label htmlFor="duration_type" className="text-sm font-medium">
+        <Label htmlFor="duration_type" className="text-sm font-medium text-slate-900">
           Billing Type
         </Label>
         <Select
@@ -355,7 +389,7 @@ export function BookingForm({
 
       {/* Advance Paid */}
       <div>
-        <Label htmlFor="advance_paid" className="text-sm font-medium">
+        <Label htmlFor="advance_paid" className="text-sm font-medium text-slate-900">
           Advance Paid ({settings.currency})
         </Label>
         <Input
@@ -381,7 +415,7 @@ export function BookingForm({
 
       {/* Payment Method */}
       <div>
-        <Label htmlFor="payment_method" className="text-sm font-medium">
+        <Label htmlFor="payment_method" className="text-sm font-medium text-slate-900">
           Payment Method
         </Label>
         <Select
@@ -401,31 +435,9 @@ export function BookingForm({
         </Select>
       </div>
 
-      {/* Booking Source */}
-      <div>
-        <Label htmlFor="booking_source" className="text-sm font-medium">
-          Booking Source
-        </Label>
-        <Select
-          value={formData.booking_source}
-          onValueChange={(value) =>
-            setFormData({ ...formData, booking_source: value as any })
-          }
-        >
-          <SelectTrigger id="booking_source">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="WALKIN">Walk-in</SelectItem>
-            <SelectItem value="PHONE">Phone</SelectItem>
-            <SelectItem value="ONLINE">Online</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
       {/* Notes */}
       <div>
-        <Label htmlFor="notes" className="text-sm font-medium">
+        <Label htmlFor="notes" className="text-sm font-medium text-slate-900">
           Notes (Optional)
         </Label>
         <textarea
@@ -434,7 +446,7 @@ export function BookingForm({
           value={formData.notes}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
           disabled={isLoading}
-          className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900"
           rows={3}
         />
       </div>

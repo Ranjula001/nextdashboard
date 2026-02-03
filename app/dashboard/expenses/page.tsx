@@ -1,7 +1,7 @@
+import { redirect } from 'next/navigation';
 import {
   getExpenses,
   getExpenseSummaryByCategory,
-  getTotalExpensesForDateRange,
 } from '@/lib/db/expenses';
 import { getSettings } from '@/lib/db/settings';
 import { createExpense, deleteExpense } from '@/lib/db/expenses';
@@ -50,15 +50,17 @@ export default async function ExpensesPage({
       await createExpense({
         category: expenseCategory,
         amount,
-        date,
+        expense_date: date,
         description: description || undefined,
       });
+      redirect('/dashboard/expenses');
     }
   };
 
   const handleDeleteExpense = async (expenseId: string) => {
     'use server';
     await deleteExpense(expenseId);
+    redirect('/dashboard/expenses');
   };
 
   try {
@@ -276,7 +278,7 @@ export default async function ExpensesPage({
                       className="border-b border-slate-100 hover:bg-slate-50"
                     >
                       <td className="py-3 px-4 text-slate-900">
-                        {new Date(expense.date).toLocaleDateString()}
+                        {new Date(expense.expense_date).toLocaleDateString()}
                       </td>
                       <td className="py-3 px-4">
                         <span className="inline-block px-2 py-1 bg-slate-100 text-slate-800 rounded text-xs font-medium">

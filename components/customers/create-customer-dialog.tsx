@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { CustomerForm } from './customer-form';
-import { createCustomer } from '@/lib/db/customers';
+import { createCustomerClient } from '@/lib/db/customers';
 import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 
@@ -31,7 +31,7 @@ export function CreateCustomerDialog({
   const handleSubmit = async (formData: any) => {
     setIsLoading(true);
     try {
-      await createCustomer(formData);
+      await createCustomerClient(formData);
       setOpen(false);
       router.refresh();
     } catch (error) {
@@ -44,7 +44,7 @@ export function CreateCustomerDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild={asChild}>
+      <DialogTrigger asChild>
         {children ? (
           children
         ) : (

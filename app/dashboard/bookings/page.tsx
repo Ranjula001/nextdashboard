@@ -1,4 +1,4 @@
-import { getBookings } from '@/lib/db/bookings';
+import { getBookings } from '@/lib/db/bookings-server';
 import { getSettings } from '@/lib/db/settings';
 import { formatCurrency, getPaymentStatusColor } from '@/lib/services/booking.service';
 import { Button } from '@/components/ui/button';
@@ -23,12 +23,24 @@ export default async function BookingsPage() {
             <h1 className="text-3xl font-bold text-slate-900">Bookings</h1>
             <p className="text-slate-600 mt-2">Manage your accommodation bookings</p>
           </div>
-          <Link href="/dashboard/bookings/new">
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="w-4 h-4 mr-2" />
-              New Booking
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link href="/dashboard/bookings/completed">
+              <Button variant="outline">
+                Completed
+              </Button>
+            </Link>
+            <Link href="/dashboard/bookings/cancelled">
+              <Button variant="outline">
+                Cancelled
+              </Button>
+            </Link>
+            <Link href="/dashboard/bookings/new">
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="w-4 h-4 mr-2" />
+                New Booking
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Bookings Table */}
@@ -52,6 +64,9 @@ export default async function BookingsPage() {
                     </th>
                     <th className="text-right py-3 px-4 font-semibold text-slate-900">
                       Amount
+                    </th>
+                    <th className="text-right py-3 px-4 font-semibold text-slate-900">
+                      Balance
                     </th>
                     <th className="text-left py-3 px-4 font-semibold text-slate-900">
                       Status
@@ -101,20 +116,23 @@ export default async function BookingsPage() {
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="font-medium text-slate-900">
-                          {formatCurrency(booking.subtotal, settings.currency)}
+                          {formatCurrency(booking.total_amount, settings.currency)}
                         </div>
-                        <div className="text-xs text-slate-600">
-                          Paid:{' '}
-                          {formatCurrency(booking.advance_paid, settings.currency)}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="font-medium text-red-600">
+                          {formatCurrency(booking.total_amount - (booking.advance_paid || 0), settings.currency)}
                         </div>
                       </td>
                       <td className="py-3 px-4">
                         <span
-                          className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(
-                            booking.payment_status
-                          )}`}
+                          className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                            booking.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                            booking.status === 'EXPIRED' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}
                         >
-                          {booking.payment_status}
+                          {booking.status}
                         </span>
                       </td>
                       <td className="py-3 px-4">

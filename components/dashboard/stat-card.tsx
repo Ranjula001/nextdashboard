@@ -32,17 +32,17 @@ export function StatCard({
   description,
 }: StatCardProps) {
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white rounded-lg shadow p-3 sm:p-6">
       <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-slate-600">{title}</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">{value}</p>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs sm:text-sm font-medium text-slate-600 truncate">{title}</p>
+          <p className="mt-1 sm:mt-2 text-xl sm:text-3xl font-bold text-slate-900">{value}</p>
           {description && (
             <p className="mt-1 text-xs text-slate-500">{description}</p>
           )}
         </div>
-        <div className={`p-3 rounded-lg ${iconColorClasses[color]}`}>
-          <Icon className="w-6 h-6" />
+        <div className={`p-2 sm:p-3 rounded-lg ${iconColorClasses[color]} flex-shrink-0`}>
+          <Icon className="w-4 h-4 sm:w-6 sm:h-6" />
         </div>
       </div>
     </div>

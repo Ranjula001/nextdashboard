@@ -76,7 +76,7 @@ export function RoomForm({
 
       {/* Room Name */}
       <div>
-        <Label htmlFor="room_name" className="text-sm font-medium">
+        <Label htmlFor="room_name" className="text-sm font-medium text-slate-900">
           Room Name
         </Label>
         <Input
@@ -93,7 +93,7 @@ export function RoomForm({
 
       {/* Room Type */}
       <div>
-        <Label htmlFor="room_type" className="text-sm font-medium">
+        <Label htmlFor="room_type" className="text-sm font-medium text-slate-900">
           Room Type
         </Label>
         <Select
@@ -114,7 +114,7 @@ export function RoomForm({
 
       {/* Hourly Rate */}
       <div>
-        <Label htmlFor="hourly_rate" className="text-sm font-medium">
+        <Label htmlFor="hourly_rate" className="text-sm font-medium text-slate-900">
           Hourly Rate (Rs.)
         </Label>
         <Input
@@ -133,7 +133,7 @@ export function RoomForm({
 
       {/* Daily Rate */}
       <div>
-        <Label htmlFor="daily_rate" className="text-sm font-medium">
+        <Label htmlFor="daily_rate" className="text-sm font-medium text-slate-900">
           Daily Rate (Rs.)
         </Label>
         <Input
@@ -153,7 +153,7 @@ export function RoomForm({
       {/* Status (only for existing rooms) */}
       {room && (
         <div>
-          <Label htmlFor="status" className="text-sm font-medium">
+          <Label htmlFor="status" className="text-sm font-medium text-slate-900">
             Status
           </Label>
           <Select value={status} onValueChange={(value) => setStatus(value as RoomStatus)}>
@@ -164,7 +164,7 @@ export function RoomForm({
               <SelectItem value="AVAILABLE">Available</SelectItem>
               <SelectItem value="OCCUPIED">Occupied</SelectItem>
               <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
-              <SelectItem value="BLOCKED">Blocked</SelectItem>
+              <SelectItem value="OUT_OF_ORDER">Out of Order</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -172,7 +172,7 @@ export function RoomForm({
 
       {/* Maintenance Notes */}
       <div>
-        <Label htmlFor="maintenance_notes" className="text-sm font-medium">
+        <Label htmlFor="maintenance_notes" className="text-sm font-medium text-slate-900">
           Maintenance Notes
         </Label>
         <textarea
@@ -183,7 +183,7 @@ export function RoomForm({
             setFormData({ ...formData, maintenance_notes: e.target.value })
           }
           disabled={isLoading}
-          className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900"
           rows={3}
         />
       </div>

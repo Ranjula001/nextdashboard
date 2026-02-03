@@ -1,4 +1,4 @@
-import { getRooms } from '@/lib/db/rooms';
+import { getRooms } from '@/lib/db/rooms-server';
 import { getRoomStatusColor } from '@/lib/services/booking.service';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -25,7 +25,7 @@ export default async function RoomsPage() {
           {rooms.map((room) => (
             <div
               key={room.id}
-              className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
+              className="bg-white rounded-lg shadow p-6 transition-shadow"
             >
               {/* Room Header */}
               <div className="flex items-start justify-between mb-4">
@@ -37,8 +37,8 @@ export default async function RoomsPage() {
                     {room.room_type === 'AC' ? 'Air Conditioned' : 'Non-AC'}
                   </p>
                 </div>
-                <Link href={`/dashboard/rooms/${room.id}/edit`}>
-                  <Button variant="ghost" size="sm">
+                <Link href={`/dashboard/rooms/${room.id}`}>
+                  <Button variant="outline" size="sm">
                     <Edit className="w-4 h-4" />
                   </Button>
                 </Link>

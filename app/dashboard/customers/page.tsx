@@ -1,4 +1,4 @@
-import { getCustomers, searchCustomers } from '@/lib/db/customers';
+import { getCustomers, searchCustomers } from '@/lib/db/customers-server';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
