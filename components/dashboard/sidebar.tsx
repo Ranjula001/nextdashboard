@@ -106,7 +106,7 @@ export function Sidebar({ businessName }: { businessName: string }) {
         {/* Logo/Brand */}
         <div className="p-4 lg:p-6 border-b border-slate-700 mt-12 lg:mt-0">
           <h1 className="text-lg lg:text-xl font-bold">{businessName}</h1>
-          <p className="text-xs text-slate-400">Holiday Home ERP</p>
+          <p className="text-xs text-slate-400">Powerd by : 9TAILED ERP SYSTEMS</p>
         </div>
 
         {/* Navigation Menu */}

@@ -11,8 +11,8 @@ async function SidebarWrapper() {
 }
 
 export const metadata = {
-  title: 'BIMBARA Dashboard | Holiday Home ERP',
-  description: 'Manage your holiday home bookings and operations',
+  title: '9TAILED ERP SYSTEMS',
+  description: 'Manage your stay bookings and operations',
 };
 
 export default async function DashboardLayout({
