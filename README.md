@@ -1,5 +1,5 @@
 <a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="BIMBARA Holiday Home ERP - Complete booking and property management system" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
+  <img alt="9Tailed ERP - Complete booking and property management system" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
   <h1 align="center">BIMBARA Holiday Home ERP</h1>
 </a>
 
