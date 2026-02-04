@@ -1,6 +1,6 @@
 <a href="https://demo-nextjs-with-supabase.vercel.app/">
   <img alt="9Tailed ERP - Complete booking and property management system" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">9Tailed ER</h1>
+  <h1 align="center">9Tailed ERP</h1>
 </a>
 
 <p align="center">
