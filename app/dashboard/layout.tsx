@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { Sidebar } from '@/components/dashboard/sidebar';
 import { getSettings } from '@/lib/db/settings';
+import { OrganizationProvider } from '@/components/organization/organization-context';
 import { Suspense } from 'react';
 
 async function SidebarWrapper() {
@@ -21,23 +22,25 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <Suspense fallback={<div>Loading...</div>}>
-        <AuthCheck />
-      </Suspense>
-      
-      <Suspense fallback={<div className="hidden lg:block w-64 bg-white border-r border-slate-200">Loading...</div>}>
-        <SidebarWrapper />
-      </Suspense>
-      
-      <main className="flex-1 overflow-auto lg:ml-0">
-        <div className="container mx-auto py-4 sm:py-8 px-3 sm:px-6">
-          <Suspense fallback={<div>Loading...</div>}>
-            {children}
-          </Suspense>
-        </div>
-      </main>
-    </div>
+    <OrganizationProvider>
+      <div className="flex min-h-screen bg-slate-50">
+        <Suspense fallback={<div>Loading...</div>}>
+          <AuthCheck />
+        </Suspense>
+        
+        <Suspense fallback={<div className="hidden lg:block w-64 bg-white border-r border-slate-200">Loading...</div>}>
+          <SidebarWrapper />
+        </Suspense>
+        
+        <main className="flex-1 overflow-auto lg:ml-0">
+          <div className="container mx-auto py-4 sm:py-8 px-3 sm:px-6">
+            <Suspense fallback={<div>Loading...</div>}>
+              {children}
+            </Suspense>
+          </div>
+        </main>
+      </div>
+    </OrganizationProvider>
   );
 }
 

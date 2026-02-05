@@ -40,15 +40,26 @@ export function SignUpForm({
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
       });
-      if (error) throw error;
-      router.push("/auth/sign-up-success");
+      if (signUpError) throw signUpError;
+
+      // Immediately sign in the user so they can continue to the setup flow
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        // If sign in fails (for example, due to server-side email confirmation requirements),
+        // show the error so the developer can choose to disable email verification in Supabase Auth settings.
+        throw signInError;
+      }
+
+      // Signed in successfully, redirect to setup
+      router.push("/setup");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {

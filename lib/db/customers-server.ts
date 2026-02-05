@@ -84,10 +84,16 @@ export async function createCustomer(input: CreateCustomerInput): Promise<Custom
     throw new Error('User not authenticated');
   }
 
+  // Get user's current organization
+  const { data: orgId } = await supabase.rpc('get_current_organization_id');
+  if (!orgId) {
+    throw new Error('No organization selected');
+  }
+
   const { data, error } = await supabase
     .from('customers')
     .insert({
-      owner_id: userData.user.id,
+      organization_id: orgId,
       ...input,
       visit_count: 0,
     })

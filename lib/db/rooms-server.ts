@@ -27,10 +27,23 @@ export async function getRoomsClient() {
 export async function getRooms(): Promise<Room[]> {
   const supabase = await getRoomsClient();
 
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) {
+    throw new Error('User not authenticated');
+  }
+
+  // Get user's current organization
+  const { data: orgId } = await supabase
+    .rpc('get_current_organization_id');
+
+  if (!orgId) {
+    return [];
+  }
+
   const { data, error } = await supabase
     .from('rooms')
     .select('*')
-    .eq('is_active', true)
+    .eq('organization_id', orgId)
     .order('room_name', { ascending: true });
 
   if (error) {
@@ -66,12 +79,19 @@ export async function createRoom(input: CreateRoomInput): Promise<Room> {
     throw new Error('User not authenticated');
   }
 
+  // Get user's current organization
+  const { data: orgId } = await supabase
+    .rpc('get_current_organization_id');
+
+  if (!orgId) {
+    throw new Error('No organization selected');
+  }
+
   const { data, error } = await supabase
     .from('rooms')
     .insert({
-      owner_id: userData.user.id,
+      organization_id: orgId,
       ...input,
-      is_active: true,
     })
     .select()
     .single();
@@ -89,8 +109,6 @@ export async function updateRoom(
   input: UpdateRoomInput
 ): Promise<Room> {
   const supabase = await getRoomsClient();
-
-  console.log('Updating room:', roomId, 'with data:', input);
 
   const { data, error } = await supabase
     .from('rooms')
@@ -111,11 +129,11 @@ export async function updateRoom(
 }
 
 export async function deactivateRoom(roomId: string): Promise<void> {
-  await updateRoom(roomId, { is_active: false });
+  await updateRoom(roomId, { status: 'OUT_OF_ORDER' });
 }
 
 export async function reactivateRoom(roomId: string): Promise<void> {
-  await updateRoom(roomId, { is_active: true });
+  await updateRoom(roomId, { status: 'AVAILABLE' });
 }
 
 export async function deleteRoom(roomId: string): Promise<void> {

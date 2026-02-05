@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import {
@@ -18,7 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
-import { useRouter } from 'next/navigation';
+import { OrganizationSwitcher } from '@/components/organization/organization-switcher';
 
 const menuItems = [
   {
@@ -109,7 +109,10 @@ export function Sidebar({ businessName }: { businessName: string }) {
           <p className="text-xs text-slate-400">Powerd by : 9TAILED ERP SYSTEMS</p>
         </div>
 
-        {/* Navigation Menu */}
+        {/* Organization Switcher */}
+      <OrganizationSwitcher />
+
+      {/* Navigation Menu */}
         <nav className="flex-1 p-3 lg:p-4 space-y-1 lg:space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;

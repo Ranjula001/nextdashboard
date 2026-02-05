@@ -9,32 +9,42 @@ export async function createBookingClient(input: CreateBookingInput): Promise<Bo
     throw new Error('User not authenticated');
   }
 
-  // Map duration_type to booking_type for database compatibility
-  const bookingType = input.duration_type === 'HOURS' ? 'HOURLY' : 'DAILY';
-  
+  // Normalize field names (support both duration_type and booking_type, subtotal and total_amount)
+  const bookingType = input.booking_type || (input.duration_type === 'HOURS' ? 'HOURLY' : 'DAILY');
+  const totalAmount = input.total_amount ?? input.subtotal;
+
+  if (!totalAmount) {
+    throw new Error('Total amount is required');
+  }
+
   // Calculate payment status based on advance paid vs total
   let paymentStatus: 'PENDING' | 'PARTIAL' | 'PAID' = 'PENDING';
-  if (input.advance_paid >= input.subtotal) {
+  if (input.advance_paid >= totalAmount) {
     paymentStatus = 'PAID';
   } else if (input.advance_paid > 0) {
     paymentStatus = 'PARTIAL';
   }
 
+  // Get user's current organization
+  const { data: orgId } = await supabase.rpc('get_current_organization_id');
+  if (!orgId) {
+    throw new Error('No organization selected');
+  }
+
   const { data, error } = await supabase
     .from('bookings')
     .insert({
-      owner_id: userData.user.id,
+      organization_id: orgId,
       room_id: input.room_id,
       customer_id: input.customer_id,
       check_in_date: input.check_in_date,
       check_out_date: input.check_out_date,
       booking_type: bookingType,
       status: 'ACTIVE',
-      subtotal: input.subtotal,
-      discount: 0,
-      total_amount: input.subtotal,
+      subtotal: totalAmount,
+      total_amount: totalAmount,
+      advance_paid: input.advance_paid,
       payment_status: paymentStatus,
-      payment_method: input.payment_method,
       notes: input.notes,
     })
     .select()

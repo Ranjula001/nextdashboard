@@ -9,10 +9,16 @@ export async function createRoomClient(input: CreateRoomInput): Promise<Room> {
     throw new Error('User not authenticated');
   }
 
+  // Get user's current organization
+  const { data: orgId } = await supabase.rpc('get_current_organization_id');
+  if (!orgId) {
+    throw new Error('No organization selected');
+  }
+
   const { data, error } = await supabase
     .from('rooms')
     .insert({
-      owner_id: userData.user.id,
+      organization_id: orgId,
       ...input,
       is_active: true,
     })

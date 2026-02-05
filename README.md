@@ -110,7 +110,16 @@ If you wish to just develop locally and not deploy to Vercel, [follow the steps 
 
   Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
 
+  > ⚠️ Optional: If you want users to be signed in immediately after sign up (skip email verification), disable **Email confirmations** in your Supabase project: **Dashboard → Authentication → Settings → Enable email confirmations** (turn it off). This is a project-level setting and affects account verification behaviour. Use with caution.
+
 5. Set up the database schema (see [Database Setup](#database-setup) section below)
+
+> ⚠️ Server requirement: To enable server-side creation of organizations (atomic create + owner membership), set the following env var in your deployment environment or `.env.local`:
+>
+> ```env
+> SUPABASE_SERVICE_ROLE_KEY=[YOUR SUPABASE SERVICE ROLE KEY]
+> ```
+> Keep this value secret and never expose it to client-side code. The API route uses this key server-side to call a secure database RPC `create_organization_with_owner` which is defined in `database-migration.sql`.
 
 6. You can now run the Next.js local development server:
 

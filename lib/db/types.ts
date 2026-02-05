@@ -1,4 +1,4 @@
-// Database type definitions for BIMBARA ERP System
+// Database type definitions for BIMBARA ERP System - Multi-Tenant SaaS
 
 // ============================================================================
 // ENUMS
@@ -11,6 +11,9 @@ export type BookingStatus = 'ACTIVE' | 'EXPIRED' | 'CANCELLED';
 export type PaymentStatus = 'PENDING' | 'PARTIAL' | 'PAID';
 export type PaymentMethod = 'CASH' | 'BANK' | 'DIGITAL';
 export type BookingSource = 'WALKIN' | 'PHONE' | 'ONLINE';
+export type UserRole = 'OWNER' | 'MANAGER' | 'STAFF';
+export type SubscriptionPlan = 'BASIC' | 'PREMIUM' | 'ENTERPRISE';
+export type SubscriptionStatus = 'ACTIVE' | 'SUSPENDED' | 'CANCELLED';
 export type ExpenseCategory =
   | 'ELECTRICITY'
   | 'WATER'
@@ -21,82 +24,108 @@ export type ExpenseCategory =
   | 'OTHER';
 
 // ============================================================================
-// TABLE TYPES
+// ORGANIZATION & USER TYPES
+// ============================================================================
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  business_type: string | null;
+  subscription_plan: SubscriptionPlan;
+  subscription_status: SubscriptionStatus;
+  max_rooms: number;
+  max_users: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrganizationUser {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  role: UserRole;
+  is_active: boolean;
+  invited_by: string | null;
+  joined_at: string;
+  created_at: string;
+}
+
+export interface UserProfile {
+  id: string;
+  user_id: string;
+  full_name: string | null;
+  phone: string | null;
+  avatar_url: string | null;
+  current_organization_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================================================
+// MAIN ENTITY TYPES (Multi-Tenant)
 // ============================================================================
 
 export interface Room {
   id: string;
-  owner_id: string;
+  organization_id: string;
+  owner_id: string; // Keep for backward compatibility
   room_name: string;
   room_type: RoomType;
   hourly_rate: number;
   daily_rate: number;
   status: RoomStatus;
-  maintenance_notes: string | null;
-  is_active: boolean;
+  description: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface Customer {
   id: string;
-  owner_id: string;
+  organization_id: string;
+  owner_id: string; // Keep for backward compatibility
   name: string;
-  phone_number: string;
+  phone: string;
   email: string | null;
-  visit_count: number;
-  notes: string | null;
+  address: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface Booking {
   id: string;
-  owner_id: string;
+  organization_id: string;
+  owner_id: string; // Keep for backward compatibility
   room_id: string;
   customer_id: string;
   check_in_date: string;
   check_out_date: string;
   booking_type: string;
   status: BookingStatus;
-  subtotal: number;
-  discount: number;
   total_amount: number;
   advance_paid: number;
   payment_status: PaymentStatus;
-  payment_method: PaymentMethod | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
 }
 
-export interface Payment {
-  id: string;
-  owner_id: string;
-  booking_id: string;
-  amount: number;
-  payment_date: string;
-  payment_method: PaymentMethod;
-  notes: string | null;
-  created_at: string;
-}
-
 export interface Expense {
   id: string;
-  owner_id: string;
-  category: ExpenseCategory;
-  description: string | null;
+  organization_id: string;
+  owner_id: string; // Keep for backward compatibility
+  category: string;
+  description: string;
   amount: number;
   expense_date: string;
-  receipt_url: string | null;
-  notes: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface Settings {
   id: string;
-  owner_id: string;
+  organization_id: string;
+  owner_id: string; // Keep for backward compatibility
   business_name: string;
   currency: string;
   timezone: string;
@@ -106,6 +135,7 @@ export interface Settings {
   default_nonac_daily_rate: number;
   tax_percentage: number | null;
   service_charge_percentage: number | null;
+  created_at: string;
   updated_at: string;
 }
 
@@ -113,60 +143,69 @@ export interface Settings {
 // FORM/INPUT TYPES
 // ============================================================================
 
+export interface CreateOrganizationInput {
+  name: string;
+  business_type: string;
+  subscription_plan: SubscriptionPlan;
+}
+
+export interface UpdateOrganizationInput extends Partial<CreateOrganizationInput> {
+  subscription_status?: SubscriptionStatus;
+  max_rooms?: number;
+  max_users?: number;
+}
+
+export interface InviteUserInput {
+  email: string;
+  role: UserRole;
+  organization_id: string;
+}
+
 export interface CreateRoomInput {
   room_name: string;
   room_type: RoomType;
   hourly_rate: number;
   daily_rate: number;
-  maintenance_notes?: string;
+  description?: string;
 }
 
 export interface UpdateRoomInput extends Partial<CreateRoomInput> {
   status?: RoomStatus;
-  is_active?: boolean;
 }
 
 export interface CreateCustomerInput {
   name: string;
-  phone_number: string;
+  phone: string;
   email?: string;
-  notes?: string;
+  address?: string;
 }
 
-export interface UpdateCustomerInput extends Partial<CreateCustomerInput> {
-  visit_count?: number;
-}
+export interface UpdateCustomerInput extends Partial<CreateCustomerInput> {}
 
 export interface CreateBookingInput {
   room_id: string;
   customer_id: string;
   check_in_date: string;
   check_out_date: string;
-  duration_type: DurationType;
-  subtotal: number;
+  duration_type?: 'HOURS' | 'DAYS';
+  booking_type?: string;
+  subtotal?: number;
+  total_amount?: number;
   advance_paid: number;
-  payment_method?: PaymentMethod;
+  payment_method?: string;
   notes?: string;
 }
 
 export interface UpdateBookingInput extends Partial<CreateBookingInput> {
   status?: BookingStatus;
-}
-
-export interface CreatePaymentInput {
-  booking_id: string;
-  amount: number;
-  payment_method: PaymentMethod;
-  notes?: string;
+  payment_status?: PaymentStatus;
 }
 
 export interface CreateExpenseInput {
-  category: ExpenseCategory;
-  description?: string;
+  category: string;
+  description: string;
   amount: number;
   expense_date: string;
-  receipt_url?: string;
-  notes?: string;
 }
 
 export interface UpdateExpenseInput extends Partial<CreateExpenseInput> {}
@@ -187,71 +226,10 @@ export interface UpdateSettingsInput {
 // VIEW TYPES
 // ============================================================================
 
-export interface DailyRevenueView {
-  revenue_date: string;
-  total_revenue: number;
-  booking_count: number;
-  rooms_occupied: number;
-}
-
-export interface OccupancyView {
-  room_id: string;
-  room_name: string;
-  total_bookings: number;
-  total_days_booked: number;
-}
-
-export interface CurrentOccupancyStatus {
-  id: string;
-  room_name: string;
-  room_type: RoomType;
-  status: RoomStatus;
-  current_status: 'OCCUPIED' | 'AVAILABLE';
-  current_booking_id: string | null;
-}
-
-// ============================================================================
-// CALCULATION TYPES
-// ============================================================================
-
-export interface PriceCalculation {
-  base_price: number;
-  tax_amount: number;
-  service_charge: number;
-  total_price: number;
-}
-
 export interface BookingWithRelations extends Booking {
   room?: Room;
   customer?: Customer;
-  payments?: Payment[];
 }
-
-export interface RoomWithOccupancy extends Room {
-  current_booking?: Booking | null;
-  is_currently_occupied: boolean;
-}
-
-// ============================================================================
-// API RESPONSE TYPES
-// ============================================================================
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
-// ============================================================================
-// DASHBOARD STATS TYPES
-// ============================================================================
 
 export interface DashboardStats {
   occupied_rooms: number;
@@ -265,11 +243,15 @@ export interface DashboardStats {
   monthly_expenses: number;
 }
 
-export interface MonthlySnapshot {
-  total_revenue: number;
-  total_expenses: number;
-  net_profit: number;
-  profit_margin: number;
-  total_bookings: number;
-  occupancy_rate: number;
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
 }
