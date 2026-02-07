@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Settings, UpdateSettingsInput } from './types';
+import { getUserCurrentOrganization } from '@/lib/security/multi-tenant-validation';
 
 export async function getSettingsClient() {
   const cookieStore = await cookies();
@@ -35,50 +36,24 @@ export async function getSettings(): Promise<Settings> {
     throw new Error('User not authenticated');
   }
 
-  // Try to get settings by organization first
-  const { data: orgData, error: orgError } = await supabase.rpc('get_current_organization_id');
-  const orgId = orgData as string | null;
+  // Get user's current organization - ensures security context
+  const orgId = await getUserCurrentOrganization();
 
-  let settingsData: Settings | null = null;
+  // Fetch organization-scoped settings
+  const { data, error } = await supabase
+    .from('settings')
+    .select('*')
+    .eq('organization_id', orgId)
+    .maybeSingle();
 
-  if (orgId) {
-    // Try organization-scoped settings first
-    const { data, error } = await supabase
-      .from('settings')
-      .select('*')
-      .eq('organization_id', orgId)
-      .maybeSingle();
-
-    if (error && error.code !== 'PGRST116') {
-      // Some error other than not found
-      console.error('Error fetching settings by org:', error);
-    }
-
-    if (data) {
-      settingsData = data;
-    }
+  if (error && error.code !== 'PGRST116') {
+    // Some error other than not found
+    console.error('Error fetching settings:', error);
+    throw new Error('Failed to fetch settings');
   }
 
-  // If no org settings found, try owner-scoped settings (fallback for legacy schema)
-  if (!settingsData) {
-    const { data, error } = await supabase
-      .from('settings')
-      .select('*')
-      .eq('owner_id', userData.user.id)
-      .maybeSingle();
-
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error fetching settings by owner:', error);
-    }
-
-    if (data) {
-      settingsData = data;
-    }
-  }
-
-  // If settings exist, return them
-  if (settingsData) {
-    return settingsData;
+  if (data) {
+    return data;
   }
 
   // Settings don't exist, create default settings via RPC

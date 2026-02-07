@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Booking, CreateBookingInput, UpdateBookingInput, BookingWithRelations } from './types';
 import { incrementCustomerVisitCount } from './customers-server';
+import { getSecureSupabaseClient, verifyDataOwnership, getUserCurrentOrganization } from '@/lib/security/multi-tenant-validation';
 
 export async function getBookingsClient() {
   const cookieStore = await cookies();
@@ -26,17 +27,26 @@ export async function getBookingsClient() {
 }
 
 export async function updateExpiredBookings(): Promise<void> {
-  const supabase = await getBookingsClient();
-  const now = new Date().toISOString();
+  try {
+    const supabase = await getBookingsClient();
+    const now = new Date().toISOString();
+    
+    // Get the user's current organization to ensure RLS compliance
+    const orgId = await getUserCurrentOrganization();
 
-  const { error } = await supabase
-    .from('bookings')
-    .update({ status: 'EXPIRED' })
-    .eq('status', 'ACTIVE')
-    .lt('check_out_date', now);
+    // Update bookings that have passed check-out date to CHECKED_OUT status
+    const { error } = await supabase
+      .from('bookings')
+      .update({ status: 'CHECKED_OUT' })
+      .eq('organization_id', orgId)
+      .eq('status', 'ACTIVE')
+      .lt('check_out_date', now);
 
-  if (error) {
-    console.error('Error updating expired bookings:', error);
+    if (error) {
+      console.error('Error updating expired bookings:', error);
+    }
+  } catch (err) {
+    console.error('Unexpected error updating expired bookings:', err);
   }
 }
 
@@ -45,6 +55,9 @@ export async function getBookings(): Promise<BookingWithRelations[]> {
   await updateExpiredBookings();
   
   const supabase = await getBookingsClient();
+  
+  // Get user's current organization - ensures security context
+  const orgId = await getUserCurrentOrganization();
 
   const { data, error } = await supabase
     .from('bookings')
@@ -55,6 +68,7 @@ export async function getBookings(): Promise<BookingWithRelations[]> {
       customer:customers(*)
     `
     )
+    .eq('organization_id', orgId)
     .order('check_in_date', { ascending: false });
 
   if (error) {
@@ -70,6 +84,8 @@ export async function getTodaysBookings(): Promise<BookingWithRelations[]> {
   await updateExpiredBookings();
   
   const supabase = await getBookingsClient();
+  const orgId = await getUserCurrentOrganization();
+  
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const tomorrow = new Date(today);
@@ -84,6 +100,7 @@ export async function getTodaysBookings(): Promise<BookingWithRelations[]> {
       customer:customers(*)
     `
     )
+    .eq('organization_id', orgId)
     .eq('status', 'ACTIVE')
     .gte('check_in_date', today.toISOString())
     .lt('check_in_date', tomorrow.toISOString())
@@ -99,6 +116,7 @@ export async function getTodaysBookings(): Promise<BookingWithRelations[]> {
 
 export async function getUpcomingCheckIns(hoursAhead: number = 4): Promise<BookingWithRelations[]> {
   const supabase = await getBookingsClient();
+  const orgId = await getUserCurrentOrganization();
   const now = new Date();
   const future = new Date(now.getTime() + hoursAhead * 60 * 60 * 1000);
 
@@ -111,6 +129,7 @@ export async function getUpcomingCheckIns(hoursAhead: number = 4): Promise<Booki
       customer:customers(*)
     `
     )
+    .eq('organization_id', orgId)
     .eq('status', 'ACTIVE')
     .gte('check_in_date', now.toISOString())
     .lte('check_in_date', future.toISOString())
@@ -129,6 +148,8 @@ export async function getUpcomingBookings(): Promise<BookingWithRelations[]> {
   await updateExpiredBookings();
   
   const supabase = await getBookingsClient();
+  const orgId = await getUserCurrentOrganization();
+  
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   tomorrow.setHours(0, 0, 0, 0);
@@ -142,6 +163,7 @@ export async function getUpcomingBookings(): Promise<BookingWithRelations[]> {
       customer:customers(*)
     `
     )
+    .eq('organization_id', orgId)
     .gte('check_in_date', tomorrow.toISOString())
     .order('check_in_date', { ascending: true });
 
@@ -155,6 +177,7 @@ export async function getUpcomingBookings(): Promise<BookingWithRelations[]> {
 
 export async function getUpcomingCheckOuts(hoursAhead: number = 4): Promise<BookingWithRelations[]> {
   const supabase = await getBookingsClient();
+  const orgId = await getUserCurrentOrganization();
   const now = new Date();
   const future = new Date(now.getTime() + hoursAhead * 60 * 60 * 1000);
 
@@ -167,6 +190,7 @@ export async function getUpcomingCheckOuts(hoursAhead: number = 4): Promise<Book
       customer:customers(*)
     `
     )
+    .eq('organization_id', orgId)
     .eq('status', 'ACTIVE')
     .gte('check_out_date', now.toISOString())
     .lte('check_out_date', future.toISOString())
@@ -185,11 +209,13 @@ export async function getRevenueForDateRange(
   endDate: string
 ): Promise<number> {
   const supabase = await getBookingsClient();
+  const orgId = await getUserCurrentOrganization();
 
   const { data, error } = await supabase
     .from('bookings')
     .select('total_amount')
-    .in('status', ['ACTIVE', 'EXPIRED'])
+    .eq('organization_id', orgId)
+    .in('status', ['ACTIVE', 'CHECKED_OUT'])
     .gte('check_in_date', startDate)
     .lt('check_in_date', endDate);
 
@@ -207,14 +233,16 @@ export async function getBookingsForRoomInDateRange(
   endDate: string
 ): Promise<Booking[]> {
   const supabase = await getBookingsClient();
+  const orgId = await getUserCurrentOrganization();
 
   const { data, error } = await supabase
     .from('bookings')
     .select('*')
+    .eq('organization_id', orgId)
     .eq('room_id', roomId)
     .eq('status', 'ACTIVE')
     .or(`check_in_date.lt.${endDate},check_out_date.gt.${startDate}`)
-    .order('check_in_date', { ascending: true });
+    .order('check_in_date', { ascending: true })
 
   if (error) {
     console.error('Error fetching bookings for room:', error);
@@ -231,10 +259,12 @@ export async function isRoomAvailable(
   excludeBookingId?: string
 ): Promise<boolean> {
   const supabase = await getBookingsClient();
+  const orgId = await getUserCurrentOrganization();
 
   let query = supabase
     .from('bookings')
     .select('id')
+    .eq('organization_id', orgId)
     .eq('room_id', roomId)
     .eq('status', 'ACTIVE')
     .or(`and(check_in_date.lt.${checkOutDate},check_out_date.gt.${checkInDate})`);
@@ -255,6 +285,7 @@ export async function isRoomAvailable(
 
 export async function getCustomerActiveBookings(customerId: string): Promise<BookingWithRelations[]> {
   const supabase = await getBookingsClient();
+  const orgId = await getUserCurrentOrganization();
 
   const { data, error } = await supabase
     .from('bookings')
@@ -265,6 +296,7 @@ export async function getCustomerActiveBookings(customerId: string): Promise<Boo
       customer:customers(*)
     `
     )
+    .eq('organization_id', orgId)
     .eq('customer_id', customerId)
     .eq('status', 'ACTIVE')
     .order('check_in_date', { ascending: true });

@@ -74,6 +74,7 @@ export function Sidebar({ businessName }: { businessName: string }) {
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
     );
 
+    setIsMobileMenuOpen(false);
     await supabase.auth.signOut();
     router.push('/auth/login');
   };

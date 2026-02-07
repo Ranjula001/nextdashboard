@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Expense, CreateExpenseInput, UpdateExpenseInput, ExpenseCategory } from './types';
+import { getUserCurrentOrganization } from '@/lib/security/multi-tenant-validation';
 
 export async function getExpensesClient() {
   const cookieStore = await cookies();
@@ -29,10 +30,12 @@ export async function getExpensesClient() {
  */
 export async function getExpenses(): Promise<Expense[]> {
   const supabase = await getExpensesClient();
+  const orgId = await getUserCurrentOrganization();
 
   const { data, error } = await supabase
     .from('expenses')
     .select('*')
+    .eq('organization_id', orgId)
     .order('expense_date', { ascending: false });
 
   if (error) {
@@ -71,10 +74,12 @@ export async function getExpensesForDateRange(
   endDate: string
 ): Promise<Expense[]> {
   const supabase = await getExpensesClient();
+  const orgId = await getUserCurrentOrganization();
 
   const { data, error } = await supabase
     .from('expenses')
     .select('*')
+    .eq('organization_id', orgId)
     .gte('expense_date', startDate)
     .lt('expense_date', endDate)
     .order('expense_date', { ascending: false });
@@ -92,10 +97,12 @@ export async function getExpensesForDateRange(
  */
 export async function getExpensesByCategory(category: ExpenseCategory): Promise<Expense[]> {
   const supabase = await getExpensesClient();
+  const orgId = await getUserCurrentOrganization();
 
   const { data, error } = await supabase
     .from('expenses')
     .select('*')
+    .eq('organization_id', orgId)
     .eq('category', category)
     .order('expense_date', { ascending: false });
 
@@ -193,10 +200,12 @@ export async function getTotalExpensesForDateRange(
   endDate: string
 ): Promise<number> {
   const supabase = await getExpensesClient();
+  const orgId = await getUserCurrentOrganization();
 
   const { data, error } = await supabase
     .from('expenses')
     .select('amount')
+    .eq('organization_id', orgId)
     .gte('expense_date', startDate)
     .lt('expense_date', endDate);
 

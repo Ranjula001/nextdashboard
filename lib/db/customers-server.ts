@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Customer, CreateCustomerInput, UpdateCustomerInput } from './types';
+import { getUserCurrentOrganization, verifyDataOwnership } from '@/lib/security/multi-tenant-validation';
 
 export async function getCustomersClient() {
   const cookieStore = await cookies();
@@ -26,10 +27,12 @@ export async function getCustomersClient() {
 
 export async function getCustomers(): Promise<Customer[]> {
   const supabase = await getCustomersClient();
+  const orgId = await getUserCurrentOrganization();
 
   const { data, error } = await supabase
     .from('customers')
     .select('*')
+    .eq('organization_id', orgId)
     .order('name', { ascending: true });
 
   if (error) {

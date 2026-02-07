@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Room, CreateRoomInput, UpdateRoomInput } from './types';
+import { getUserCurrentOrganization, verifyDataOwnership } from '@/lib/security/multi-tenant-validation';
 
 export async function getRoomsClient() {
   const cookieStore = await cookies();
@@ -33,12 +34,7 @@ export async function getRooms(): Promise<Room[]> {
   }
 
   // Get user's current organization
-  const { data: orgId } = await supabase
-    .rpc('get_current_organization_id');
-
-  if (!orgId) {
-    return [];
-  }
+  const orgId = await getUserCurrentOrganization();
 
   const { data, error } = await supabase
     .from('rooms')
